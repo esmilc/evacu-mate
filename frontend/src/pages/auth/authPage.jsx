@@ -7,7 +7,8 @@ function AuthPage() {
     <div>
       {!isAuthenticated ? (
         <>
-          <h2>Login / Signup</h2>
+          <h1> Welcome to Evacumate </h1>
+          
           <button onClick={() => loginWithRedirect()}>Log In / Sign Up</button>
         </>
       ) : (
