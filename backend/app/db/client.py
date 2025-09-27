@@ -16,7 +16,7 @@ def get_db():
         return _db
     mongo_uri = os.getenv("MONGO_URI")
     db_name = os.environ.get("MONGO_DB", "evac_dev")
-    _client = MongoClient(os.getenv("MONGO_URI"), server_api=ServerApi('1'))
+    _client = MongoClient(mongo_uri, server_api=ServerApi('1'))
     _db = _client[db_name]
     return _db
 
