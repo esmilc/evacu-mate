@@ -3,8 +3,12 @@ from app.db.ensure_indexes import ensure_indexes
 from app.db.client import get_db
 from app.db.collections import COLL
 from app.maps import compute_route
+from routes import evac
+
 
 app = FastAPI()
+app.include_router(evac.router)
+
 
 @app.on_event("startup")
 def startup():
