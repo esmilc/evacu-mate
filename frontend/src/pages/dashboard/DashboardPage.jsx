@@ -38,6 +38,43 @@ function DashboardPage() {
     setTimeout(() => setMessage(""), 5000);
   };
 
+  // Find nearest shelter using browser geolocation and backend route agent
+  const findBestShelter = async () => {
+    if (!navigator.geolocation) {
+      setMessage('Geolocation not supported in this browser');
+      return;
+    }
+    setMessage('Locating...');
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const origin = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      try {
+        const res = await fetch('http://localhost:8000/best-shelter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ origin, shelters }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || data.error || 'Server error');
+        const best = data.best;
+        if (!best) {
+          setMessage('No suitable shelter found');
+          return;
+        }
+        const s = best.shelter || best;
+        const eta = best.eta_seconds ? Math.round(best.eta_seconds / 60) : 'N/A';
+        setMessage(`Nearest shelter: ${s.name} — ETA ${eta} min`);
+      } catch (err) {
+        console.error('Error finding shelter:', err);
+        setMessage('Error finding nearest shelter');
+      }
+      setTimeout(() => setMessage(''), 7000);
+    }, (err) => {
+      console.error('Geolocation error', err);
+      setMessage('Could not get your location: ' + err.message);
+      setTimeout(() => setMessage(''), 7000);
+    }, { enableHighAccuracy: true, timeout: 10000 });
+  };
+
   return (
     <div className="dashboard-container" style={{ padding: "2rem" }}>
       <main className="main-panel">
@@ -109,6 +146,10 @@ function DashboardPage() {
           <h4 style={{ marginTop: 0 }}>Quick Actions</h4>
           <button style={{ width: '100%', padding: '0.6rem', borderRadius: 8, border: 'none', background: '#38bdf8', color: '#012a4a', cursor: 'pointer' }}>
             Trigger Evacuation Drill
+          </button>
+          <div style={{ height: '0.5rem' }} />
+          <button onClick={findBestShelter} style={{ width: '100%', padding: '0.6rem', borderRadius: 8, border: 'none', background: '#10b981', color: '#fff', cursor: 'pointer' }}>
+            Find nearest shelter
           </button>
           <div style={{ height: '0.75rem' }} />
           <button style={{ width: '100%', padding: '0.6rem', borderRadius: 8, border: '1px solid rgba(2,46,76,0.06)', background: '#fff', color: '#023e8a', cursor: 'pointer' }}>
