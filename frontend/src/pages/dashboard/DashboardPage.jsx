@@ -1,18 +1,40 @@
 import { useAuth0 } from "@auth0/auth0-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function DashboardPage() {
   const { user, logout } = useAuth0();
   const [message, setMessage] = useState("");
+  const [shelters, setShelters] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const shelters = [
-    { id: "s1", name: "Miami High School Shelter", address: "202 Palm Blvd, Miami, FL", capacity: 100 },
-    { id: "s2", name: "Downtown Community Center", address: "99 City Ave, Miami, FL", capacity: 50 },
-    { id: "s3", name: "Westside Recreation Center", address: "45 Sunset Dr, Miami, FL", capacity: 75 },
-  ];
+  // Fetch shelters from backend on load
+  useEffect(() => {
+    const fetchShelters = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/shelters");
+        const data = await response.json();
+        setShelters(data);
+      } catch (err) {
+        console.error("Error fetching shelters:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchShelters();
+  }, []);
 
-  const handleRequestWaymo = (shelterName) => {
-    setMessage(`🚗 Waymo dispatched to ${shelterName}! ETA: 10 min`);
+  // Handle Waymo request for a shelter
+  const handleRequestWaymo = async (shelterId) => {
+    try {
+      const response = await fetch(`http://localhost:8000/request-waymo/${shelterId}`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      setMessage(`🚗 Waymo dispatched! ETA: ${data.eta_minutes} min`);
+    } catch (err) {
+      console.error("Error requesting Waymo:", err);
+      setMessage("❌ Failed to request Waymo");
+    }
     setTimeout(() => setMessage(""), 5000);
   };
 
@@ -21,7 +43,7 @@ function DashboardPage() {
       <main className="main-panel">
         <div className="header">
           <div>
-            <div className="title">Evacu‑Mate Dashboard</div>
+            <div className="title">Evacu-Mate Dashboard</div>
             <div className="subtitle">Real-time evacuation orchestration & monitoring</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -34,50 +56,44 @@ function DashboardPage() {
         </div>
 
         <section className="cards-grid">
-          <div className="card stat">
-            <div className="value">2</div>
-            <div className="label">Active Alerts</div>
-          </div>
-          <div className="card stat">
-            <div className="value">12</div>
-            <div className="label">Available Vehicles</div>
-          </div>
-          <div className="card stat">
-            <div className="value">5</div>
-            <div className="label">Pending Requests</div>
-          </div>
-          <div className="card stat">
-            <div className="value">243</div>
-            <div className="label">Shelter Capacity</div>
-          </div>
+          <div className="card stat"><div className="value">2</div><div className="label">Active Alerts</div></div>
+          <div className="card stat"><div className="value">12</div><div className="label">Available Vehicles</div></div>
+          <div className="card stat"><div className="value">5</div><div className="label">Pending Requests</div></div>
+          <div className="card stat"><div className="value">243</div><div className="label">Shelter Capacity</div></div>
         </section>
 
         <section style={{ marginTop: '1rem' }}>
           <div className="card">
             <h3 style={{ marginTop: 0 }}>Available Shelters</h3>
-            {shelters.map((shelter) => (
-              <div key={shelter.id} style={{ marginTop: '0.75rem', padding: '0.75rem', borderRadius: 8, background: 'rgba(255,255,255,0.9)' }}>
-                <h4 style={{ margin: 0 }}>{shelter.name}</h4>
-                <p style={{ margin: '0.25rem 0' }}>{shelter.address}</p>
-                <p style={{ margin: 0 }}>Capacity: {shelter.capacity}</p>
-                <div style={{ marginTop: '0.5rem' }}>
-                  <button
-                    style={{
-                      marginTop: '0.5rem',
-                      background: '#007bff',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '0.45rem 0.85rem',
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => handleRequestWaymo(shelter.name)}
-                  >
-                    Request Waymo
-                  </button>
+            {loading ? (
+              <p>Loading shelters...</p>
+            ) : shelters.length === 0 ? (
+              <p>No shelters available</p>
+            ) : (
+              shelters.map((shelter) => (
+                <div key={shelter.id} style={{ marginTop: '0.75rem', padding: '0.75rem', borderRadius: 8, background: 'rgba(255,255,255,0.9)' }}>
+                  <h4 style={{ margin: 0 }}>{shelter.name}</h4>
+                  <p style={{ margin: '0.25rem 0' }}>{shelter.address}</p>
+                  <p style={{ margin: 0 }}>Capacity: {shelter.capacity}</p>
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <button
+                      style={{
+                        marginTop: '0.5rem',
+                        background: '#007bff',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '0.45rem 0.85rem',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => handleRequestWaymo(shelter.id)}
+                    >
+                      Request Waymo
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
 
