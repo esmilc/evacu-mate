@@ -5,6 +5,8 @@ except Exception:
 from typing import List, Dict, Any, Optional
 
 from .maps_tool import compute_route_tool, MapsToolError
+import json
+import os
 
 
 root_agent = None
@@ -53,8 +55,46 @@ def select_best_shelter(origin: Dict[str, float], shelters: List[Dict[str, Any]]
     Returns a dict: { 'shelter': <shelter dict>, 'eta_seconds': int, 'distance_meters': int, 'polyline': str }
     Raises ValueError if shelters is empty.
     """
+    # If no shelters provided, prefer the geocoded dataset if present, otherwise
+    # fall back to the raw simulation data and attempt to flatten it.
     if not shelters:
-        raise ValueError("no shelters provided")
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+        geocoded_path = os.path.join(repo_root, 'simulation', 'florida_shelters_geocoded.json')
+        sim_path = os.path.join(repo_root, 'simulation', 'florida_shelters.json')
+
+        if os.path.exists(geocoded_path):
+            try:
+                with open(geocoded_path, 'r', encoding='utf-8') as f:
+                    # geocoded file is expected to be a list of shelter dicts
+                    shelters = json.load(f)
+            except Exception as e:
+                raise ValueError(f"failed to load geocoded shelters: {e}")
+        else:
+            try:
+                with open(sim_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            except Exception as e:
+                raise ValueError(f"no shelters provided and failed to load simulation data: {e}")
+
+            # simulation file is organized by county -> list of entries
+            flattened = []
+            for county, entries in data.items():
+                for e in entries:
+                    name = e.get('name') or e.get('facility') or 'Unnamed'
+                    street = e.get('street_address') or e.get('address') or ''
+                    address = f"{street}, {county}, FL" if street else f"{county}, FL"
+                    item = {'name': name, 'address': address}
+                    lat = e.get('lat') or e.get('latitude')
+                    lng = e.get('lng') or e.get('longitude')
+                    if lat is not None and lng is not None:
+                        try:
+                            item['lat'] = float(lat)
+                            item['lng'] = float(lng)
+                        except Exception:
+                            pass
+                    flattened.append(item)
+
+            shelters = flattened
 
     results = []
     for s in shelters:
@@ -80,14 +120,27 @@ def select_best_shelter(origin: Dict[str, float], shelters: List[Dict[str, Any]]
     # sort by score desc, then eta asc
     results.sort(key=lambda x: (-x["score"], (x["eta_seconds"] or float('inf'))))
 
-    best = results[0]
-    # prepare return shape
-    return {
-        "shelter": best["shelter"],
-        "eta_seconds": best["eta_seconds"],
-        "distance_meters": best["distance_meters"],
-        "polyline": best["polyline"],
-    }
+    if results:
+        best = results[0]
+        # prepare return shape
+        return {
+            "shelter": best["shelter"],
+            "eta_seconds": best["eta_seconds"],
+            "distance_meters": best["distance_meters"],
+            "polyline": best["polyline"],
+        }
+    # If we reached here, there were no geocoded shelters (no lat/lng). Return a sensible fallback.
+    if shelters:
+        # pick first shelter from the list and return without ETA
+        fallback = shelters[0]
+        return {
+            "shelter": fallback,
+            "eta_seconds": None,
+            "distance_meters": None,
+            "polyline": None,
+        }
+
+    raise ValueError("no candidate shelters available")
 
 
 # Example usage (call this from your orchestration code):
