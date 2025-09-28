@@ -1,0 +1,23 @@
+{
+  "scenario_id": "sim_hurricane_001",
+  "name": "Hurricane Evacuation - Low Load",
+  "disaster_type": "hurricane",
+  "start_time": "2025-10-01T14:00:00Z",
+  "duration_minutes": 180,
+  "affected_area": "Miami, FL",
+  "vehicles": [
+    { "id": "waymo_1", "capacity": 4, "location": "123 Main St, Miami, FL", "status": "available" },
+    { "id": "waymo_2", "capacity": 6, "location": "456 Oak Ave, Miami, FL", "status": "available" }
+  ],
+  "people": [
+    { "id": "p_001", "address": "789 Pine St, Miami, FL", "party_size": 2, "priority": "normal" },
+    { "id": "p_002", "address": "101 Maple Rd, Miami, FL", "party_size": 1, "priority": "special_needs" }
+  ],
+  "shelters": [
+    { "id": "s_001", "name": "Miami High School Shelter", "address": "202 Palm Blvd, Miami, FL", "capacity": 100, "pet_friendly": true, "special_needs": true }
+  ],
+  "blocked_roads": [
+    { "road_name": "I-95 Exit 12", "reason": "flooded" }
+  ],
+  "routes": []
+}
