@@ -1,0 +1,23 @@
+{
+  "scenario_id": "sim_002",
+  "name": "Evacuation - Low Load",
+  "disaster_type": "hurricane",
+  "start_time": "2025-10-08T16:00:00Z",
+  "duration_minutes": 90,
+  "affected_area": "Charleston, SC",
+  "vehicles": [
+    { "id": "waymo_6", "capacity": 4, "location": "10 Bay St, Charleston, SC", "status": "available" },
+    { "id": "waymo_7", "capacity": 4, "location": "20 King St, Charleston, SC", "status": "available" }
+  ],
+  "people": [
+    { "id": "p_006", "address": "30 Market St, Charleston, SC", "party_size": 2, "priority": "normal" },
+    { "id": "p_007", "address": "40 Broad St, Charleston, SC", "party_size": 1, "priority": "elderly" }
+  ],
+  "shelters": [
+    { "id": "s_004", "name": "Charleston Civic Center", "address": "50 Meeting St, Charleston, SC", "capacity": 50, "pet_friendly": true, "special_needs": false }
+  ],
+
+  "routes": [
+    { "vehicle_id": "waymo_6", "from": "10 Bay St", "to": "50 Meeting St", "eta_minutes": 10 }
+  ]
+}
