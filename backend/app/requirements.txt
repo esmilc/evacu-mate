@@ -2,3 +2,4 @@ uvicorn
 fastapi
 dotenv
 pymongo[srv]==4.8.0
+requests
